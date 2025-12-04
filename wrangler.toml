@@ -3,14 +3,11 @@ main = "src/index.js"
 compatibility_date = "2024-01-01"
 
 # Email binding configuration
-send_email = [
-  {
-    name = "CONTACT_EMAIL",
-    allowed_destination_addresses = [
-      "eliaz@bobadilla.work",
-      "ale@bobadilla.work"
-    ]
-  }
+[[send_email]]
+name = "CONTACT_EMAIL"
+allowed_destination_addresses = [
+  "eliaz@bobadilla.work",
+  "ale@bobadilla.work"
 ]
 
 # Environment variables (for local development)
