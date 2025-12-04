@@ -13,11 +13,18 @@ allowed_destination_addresses = [
 
 [observability]
 enabled = true
+head_sampling_rate = 1
+
 [observability.logs]
 enabled = false
 head_sampling_rate = 1
 invocation_logs = true
 persist = true
+
+[observability.traces]
+enabled = true
+persist = true
+head_sampling_rate = 1
 
 # Environment variables (for local development)
 # For production, set these via: wrangler secret put API_KEY
