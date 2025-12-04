@@ -11,6 +11,13 @@ allowed_destination_addresses = [
   "ale@bobadilla.work"
 ]
 
+[observability]
+[observability.logs]
+enabled = false
+head_sampling_rate = 1
+invocation_logs = true
+persist = true
+
 # Environment variables (for local development)
 # For production, set these via: wrangler secret put API_KEY
 [vars]
