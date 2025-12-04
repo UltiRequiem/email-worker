@@ -1,18 +1,15 @@
 {
-  "name": "email",
+  "name": "contact-form-worker",
   "version": "1.0.0",
-  "description": "",
-  "license": "ISC",
-  "author": "",
-  "type": "commonjs",
-  "main": "index.js",
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "dev": "wrangler dev",
+    "deploy": "wrangler deploy",
+    "tail": "wrangler tail"
   },
   "dependencies": {
-    "mimetext": "^3.0.27"
+    "mimetext": "^3.0.0"
   },
   "devDependencies": {
-    "wrangler": "^4.52.1"
+    "wrangler": "^3.0.0"
   }
 }
