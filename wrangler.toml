@@ -12,6 +12,7 @@ allowed_destination_addresses = [
 ]
 
 [observability]
+enabled = true
 [observability.logs]
 enabled = false
 head_sampling_rate = 1
