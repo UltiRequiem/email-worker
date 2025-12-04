@@ -68,12 +68,12 @@ export default {
 			`[${requestId}] Received ${request.method} request from ${request.headers.get("cf-connecting-ip") || "unknown"}`,
 		);
 
-		// Only accept POST requests
+		// Only accept POST requests, redirect others to the main domain
 		if (request.method !== "POST") {
 			console.log(
-				`[${requestId}] Rejected: Method not allowed (${request.method})`,
+				`[${requestId}] Redirecting ${request.method} request to ${EMAIL_CONFIG.allowedOrigin}`,
 			);
-			return new Response("Method not allowed", { status: 405 });
+			return Response.redirect(EMAIL_CONFIG.allowedOrigin, 302);
 		}
 
 		try {
