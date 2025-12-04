@@ -1,40 +1,44 @@
 import { EmailMessage } from "cloudflare:email";
 import { createMimeMessage } from "mimetext";
 
-export default {
-  async fetch(request, env) {
-    // Only accept POST requests
-    if (request.method !== "POST") {
-      return new Response("Method not allowed", { status: 405 });
-    }
+// Email configuration constants
+const EMAIL_CONFIG = {
+  sender: {
+    name: "Contact Form",
+    address: "contact@bobadilla.work",
+  },
+  recipients: ["eliaz@bobadilla.work", "ale@bobadilla.work"],
+  subject: (name) => `New Contact Form Submission from ${name}`,
+  footer: "This email was sent from the contact form at bobadilla.work",
+};
 
-    try {
-      // Parse the incoming request data
-      const data = await request.json();
-      const { name, email, company, message } = data;
+/**
+ * Builds a formatted email message from form data
+ * @param {Object} formData - The form submission data
+ * @param {string} formData.name - Sender's name
+ * @param {string} formData.email - Sender's email
+ * @param {string} formData.company - Sender's company (optional)
+ * @param {string} formData.message - The message content
+ * @returns {Object} MIME message object
+ */
+function buildEmailMessage(formData) {
+  const { name, email, company, message } = formData;
 
-      // Validate required fields
-      if (!name || !email || !message) {
-        return new Response(
-          JSON.stringify({
-            error: "Missing required fields: name, email, or message",
-          }),
-          { status: 400, headers: { "Content-Type": "application/json" } },
-        );
-      }
+  const msg = createMimeMessage();
+  msg.setSender({
+    name: EMAIL_CONFIG.sender.name,
+    addr: EMAIL_CONFIG.sender.address,
+  });
 
-      // Create the email message
-      const msg = createMimeMessage();
-      msg.setSender({ name: "Contact Form", addr: "contact@bobadilla.work" });
+  // Add all recipients
+  EMAIL_CONFIG.recipients.forEach((recipient) => {
+    msg.setRecipient(recipient);
+  });
 
-      // Add both recipients
-      msg.setRecipient("eliaz@bobadilla.work");
-      msg.setRecipient("ale@bobadilla.work");
+  msg.setSubject(EMAIL_CONFIG.subject(name));
 
-      msg.setSubject(`New Contact Form Submission from ${name}`);
-
-      // Create email body with all form data
-      const emailBody = `
+  // Create email body with all form data
+  const emailBody = `
 New contact form submission:
 
 Name: ${name}
@@ -45,22 +49,60 @@ Message:
 ${message}
 
 ---
-This email was sent from the contact form at bobadilla.work
-      `.trim();
+${EMAIL_CONFIG.footer}
+  `.trim();
 
-      msg.addMessage({
-        contentType: "text/plain",
-        data: emailBody,
-      });
+  msg.addMessage({
+    contentType: "text/plain",
+    data: emailBody,
+  });
+
+  return msg;
+}
+
+export default {
+  async fetch(request, env) {
+    const requestId = crypto.randomUUID();
+
+    console.log(`[${requestId}] Received ${request.method} request from ${request.headers.get("cf-connecting-ip") || "unknown"}`);
+
+    // Only accept POST requests
+    if (request.method !== "POST") {
+      console.log(`[${requestId}] Rejected: Method not allowed (${request.method})`);
+      return new Response("Method not allowed", { status: 405 });
+    }
+
+    try {
+      // Parse the incoming request data
+      const data = await request.json();
+      const { name, email, company, message } = data;
+
+      console.log(`[${requestId}] Processing submission from: ${name} <${email}>${company ? ` (${company})` : ""}`);
+
+      // Validate required fields
+      if (!name || !email || !message) {
+        console.warn(`[${requestId}] Validation failed: Missing required fields`);
+        return new Response(
+          JSON.stringify({
+            error: "Missing required fields: name, email, or message",
+          }),
+          { status: 400, headers: { "Content-Type": "application/json" } },
+        );
+      }
+
+      // Build the email message
+      const msg = buildEmailMessage({ name, email, company, message });
 
       // Create and send the email message
       const emailMessage = new EmailMessage(
-        "contact@bobadilla.work",
-        "eliaz@bobadilla.work",
+        EMAIL_CONFIG.sender.address,
+        EMAIL_CONFIG.recipients[0],
         msg.asRaw(),
       );
 
       await env.CONTACT_EMAIL.send(emailMessage);
+
+      console.log(`[${requestId}] Success: Email sent to ${EMAIL_CONFIG.recipients.join(", ")}`);
 
       return new Response(
         JSON.stringify({ success: true, message: "Email sent successfully" }),
@@ -73,7 +115,7 @@ This email was sent from the contact form at bobadilla.work
         },
       );
     } catch (e) {
-      console.error("Error sending email:", e);
+      console.error(`[${requestId}] Error sending email:`, e);
       return new Response(
         JSON.stringify({ error: "Failed to send email", details: e.message }),
         { status: 500, headers: { "Content-Type": "application/json" } },
